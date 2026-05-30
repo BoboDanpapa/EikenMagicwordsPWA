@@ -709,7 +709,14 @@ function speak(t) {
         u.lang = "en-US";
         u.rate = 0.85;
         window.speechSynthesis.speak(u);
+        return;
     }
+    openModal(
+        "発音を使えません",
+        "このブラウザは英語の発音機能に対応していません。Chrome、Safari、Edgeなどの新しいブラウザで試してください。",
+        "",
+        [{ label: "OK", action: closeModal, type: "secondary" }]
+    );
 }
 
 function openAndroidTtsSettings() {

@@ -1,10 +1,14 @@
-const CACHE_VERSION = "eiken-magicwords-pwa-v1.1.12-3";
+const CACHE_VERSION = "eiken-magicwords-pwa-v1.1.14-1";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./eiken_grade2_words.js",
+  "./eiken_grade4_words.js",
+  "./eiken_grade3_words.js",
   "./eiken_pre2_words.js",
+  "./eiken_grade2_words.js",
+  "./eiken_pre1_words.js",
+  "./eiken_grade1_words.js",
   "./icons/app-icon-192.png",
   "./icons/app-icon-512.png",
   "./icons/app-icon.svg",

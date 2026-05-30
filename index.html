@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#9c27b0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="英検 魔法の単語帳">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/app-icon-192.png">
+    <title>英検 魔法の単語帳</title>
+    <style>
+        :root {
+            --page-bg: #f7f1fa;
+            --text-main: #4a235a;
+            --header-start: #ba68c8;
+            --header-end: #9c27b0;
+            --header-shadow: rgba(156, 39, 176, 0.3);
+            --button-main: #ce93d8;
+            --button-shadow: #ab47bc;
+            --nav-button: #b39ddb;
+            --nav-shadow: #7e57c2;
+            --container-border: #e1bee7;
+            --container-shadow: rgba(206, 147, 216, 0.3);
+            --title-color: #8e24aa;
+            --dash-color: #ce93d8;
+            --soft-bg: #f3e5f5;
+            --card-grad-a: #f3e5f5;
+            --card-grad-b: #e1bee7;
+            --accent-text: #6a1b9a;
+            --hot-accent: #d81b60;
+            --secondary-main: #64b5f6;
+            --secondary-shadow: #1e88e5;
+            --speak-main: #ffd54f;
+            --speak-text: #d84315;
+            --speak-shadow: #ffb300;
+        }
+        body.theme-navy-sky {
+            --page-bg: #eef7ff;
+            --text-main: #17324d;
+            --header-start: #12355b;
+            --header-end: #0b5d8f;
+            --header-shadow: rgba(18, 53, 91, 0.28);
+            --button-main: #2497d4;
+            --button-shadow: #0d5f91;
+            --nav-button: #2f80c0;
+            --nav-shadow: #174d7c;
+            --container-border: #9ed8ff;
+            --container-shadow: rgba(37, 126, 184, 0.22);
+            --title-color: #12355b;
+            --dash-color: #5fb7e8;
+            --soft-bg: #e4f4ff;
+            --card-grad-a: #f9fcff;
+            --card-grad-b: #d9efff;
+            --accent-text: #0d4f7c;
+            --hot-accent: #f0a319;
+            --secondary-main: #37b7d8;
+            --secondary-shadow: #087a95;
+            --speak-main: #ffd766;
+            --speak-text: #785000;
+            --speak-shadow: #e6a800;
+        }
+        * { box-sizing: border-box; }
+        html { min-height: 100%; -webkit-text-size-adjust: 100%; }
+        body { font-family: 'Comic Sans MS', 'Nunito', 'Segoe UI', sans-serif; background-color: var(--page-bg); margin: 0; color: var(--text-main); min-height: 100vh; overflow-x: hidden; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+        button, input { -webkit-tap-highlight-color: transparent; }
+        header { position: relative; background: linear-gradient(135deg, var(--header-start), var(--header-end)); color: white; text-align: center; padding: clamp(15px, 4vw, 20px) 16px clamp(17px, 4vw, 22px); font-size: clamp(20px, 5.2vw, 24px); line-height: 1.25; font-weight: bold; border-bottom-left-radius: clamp(18px, 6vw, 30px); border-bottom-right-radius: clamp(18px, 6vw, 30px); box-shadow: 0 5px 15px var(--header-shadow); }
+        #app-title { display: inline-block; max-width: 100%; }
+        .header-user { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); max-width: 30%; background: rgba(255,255,255,0.18); border: 2px dashed rgba(255,255,255,0.5); border-radius: 999px; color: white; font-size: 13px; line-height: 1.2; font-weight: bold; padding: 7px 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .header-user.hidden { display: none; }
+        .nav { display: flex; justify-content: center; gap: 10px; padding: 10px 12px; flex-wrap: wrap; }
+        .jelly-btn { background-color: var(--button-main); color: white; border: none; font-size: 15px; line-height: 1.2; font-weight: bold; cursor: pointer; padding: 12px 18px; border-radius: 25px; box-shadow: 0 6px 0 var(--button-shadow); transition: all 0.1s; font-family: inherit; min-height: 44px; touch-action: manipulation; white-space: normal; overflow-wrap: anywhere; }
+        .jelly-btn:active { transform: translateY(6px); box-shadow: 0 0 0 var(--button-shadow); }
+        .jelly-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+        .nav .jelly-btn { background-color: var(--nav-button); box-shadow: 0 6px 0 var(--nav-shadow); }
+        .container { width: min(540px, calc(100% - 24px)); margin: 10px auto 30px; background: white; padding: clamp(18px, 5vw, 28px); border-radius: clamp(22px, 6vw, 30px); border: 4px solid var(--container-border); box-shadow: 0 10px 25px var(--container-shadow); text-align: center; }
+        .wide-container { width: min(760px, calc(100% - 24px)); }
+        .hidden { display: none !important; }
+        .screen-title { color: var(--title-color); margin: 0 0 8px; }
+        .muted { color: #777; font-size: 14px; }
+        .row { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; align-items: stretch; }
+        .study-actions { align-items: center; row-gap: 10px; }
+        .teacher-action-spacer { flex-basis: 18px; width: 18px; height: 1px; }
+        .input-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 20px 0 8px; }
+        input { width: 100%; border: 3px solid var(--container-border); border-radius: 20px; color: var(--accent-text); font-family: inherit; font-weight: bold; font-size: 16px; padding: 12px 14px; outline: none; }
+        input:focus { border-color: var(--button-main); box-shadow: 0 0 0 4px var(--soft-bg); }
+        .user-list { display: grid; gap: 12px; margin-top: 20px; }
+        .user-item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: #fafafa; border: 2px dashed var(--dash-color); border-radius: 22px; padding: 14px; }
+        .user-name-btn { text-align: left; background: var(--soft-bg); color: var(--accent-text); border: none; border-radius: 18px; padding: 14px 16px; font-family: inherit; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .danger-btn { background-color: #ffcdd2; color: #c62828; box-shadow: 0 5px 0 #ef9a9a; }
+        .danger-btn:active { box-shadow: 0 0 0 #ef9a9a; }
+        .secondary-btn { background-color: var(--secondary-main); box-shadow: 0 6px 0 var(--secondary-shadow); }
+        .home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 22px 0; }
+        .level-card { border: 3px dashed var(--dash-color); border-radius: 26px; padding: 24px 14px; background: linear-gradient(135deg, #fff, var(--soft-bg)); cursor: pointer; color: var(--accent-text); min-height: 178px; display: flex; flex-direction: column; justify-content: center; transition: 0.2s; overflow-wrap: anywhere; }
+        .level-card:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 8px 18px var(--container-shadow); }
+        .level-card strong { font-size: 28px; display: block; margin-bottom: 10px; }
+        .level-card span { color: var(--hot-accent); font-weight: bold; font-size: 14px; }
+        .toolbar { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 0 12px 8px; }
+        .mobile-label { display: none; }
+        .card { background: linear-gradient(135deg, var(--card-grad-a), var(--card-grad-b)); color: var(--accent-text); padding: clamp(28px, 8vw, 40px) clamp(14px, 5vw, 20px); border-radius: 25px; margin: 18px 0; cursor: pointer; font-size: clamp(26px, 8vw, 32px); line-height: 1.15; font-weight: bold; border: 3px dashed var(--dash-color); box-shadow: 0 8px 15px var(--container-shadow); transition: transform 0.3s; overflow-wrap: anywhere; word-break: break-word; }
+        .card:hover { transform: scale(1.03) rotate(1deg); }
+        .details { font-size: clamp(16px, 4.4vw, 18px); margin-top: 20px; font-weight: normal; background: rgba(255,255,255,0.6); padding: 15px; border-radius: 15px; }
+        .sentence { font-style: italic; margin-top: 10px; color: var(--text-main); font-weight: bold; line-height: 1.45; overflow-wrap: anywhere; }
+        .btn-speak { background-color: var(--speak-main); color: var(--speak-text); box-shadow: 0 5px 0 var(--speak-shadow); }
+        .btn-star { background-color: #fff59d; color: #f57f17; box-shadow: 0 5px 0 #fbc02d; margin-top: 10px; font-size: 14px; }
+        .btn-starred { background-color: #ffcc80; color: #e65100; box-shadow: 0 5px 0 #ef6c00; }
+        .btn-teacher-toggle { background-color: #d7ecff; color: #1565c0; box-shadow: 0 4px 0 #90caf9; min-height: 36px; padding: 8px 12px; border-radius: 18px; font-size: 12px; margin-top: 10px; }
+        .btn-teacher-toggle:active { box-shadow: 0 0 0 #90caf9; }
+        .teacher-panel { background: #fff; border: 2px dashed var(--dash-color); border-radius: 18px; margin: -2px 0 18px; padding: 14px; text-align: left; box-shadow: 0 5px 12px var(--container-shadow); }
+        .teacher-panel-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+        .teacher-title { color: var(--accent-text); font-size: 17px; line-height: 1.2; font-weight: bold; margin-bottom: 3px; }
+        .teacher-subtitle { color: #777; font-size: 13px; line-height: 1.35; font-weight: bold; }
+        .teacher-meta { display: grid; gap: 5px; margin: 12px 0; color: #555; font-size: 13px; font-weight: bold; }
+        .teacher-meta span { color: #1565c0; }
+        .teacher-status { background: var(--soft-bg); border-radius: 14px; color: var(--text-main); font-size: 13px; line-height: 1.35; font-weight: bold; padding: 10px 12px; margin-bottom: 12px; }
+        .teacher-controls { justify-content: flex-start; gap: 8px; }
+        .btn-teacher-mic, .btn-teacher-stop { min-height: 38px; padding: 8px 14px; border-radius: 18px; font-size: 13px; }
+        .btn-teacher-mic { background-color: #b3e5fc; color: #0277bd; box-shadow: 0 4px 0 #4fc3f7; }
+        .btn-teacher-stop { background-color: #eeeeee; color: #666; box-shadow: 0 4px 0 #cfcfcf; }
+        .options { display: flex; flex-direction: column; gap: 15px; margin-top: 25px; }
+        .option-btn { background-color: white; border: 3px solid var(--container-border); color: var(--accent-text); padding: 15px; font-size: clamp(16px, 4.5vw, 18px); line-height: 1.25; font-weight: bold; border-radius: 20px; cursor: pointer; transition: 0.2s; font-family: inherit; min-height: 52px; overflow-wrap: anywhere; }
+        .option-btn:hover { background-color: var(--soft-bg); transform: scale(1.02); }
+        .status-box { background-color: var(--soft-bg); border: 2px dashed var(--dash-color); border-radius: 20px; padding: 15px; margin-bottom: 20px; text-align: center; }
+        .level-title { font-size: 16px; color: #666; font-weight: bold; margin-bottom: 8px; }
+        .level-title span { color: #d81b60; font-size: 20px; }
+        .streak-bar { font-size: clamp(20px, 6vw, 24px); color: var(--title-color); font-weight: bold; }
+        .version-badge { position: fixed; left: 10px; bottom: max(8px, env(safe-area-inset-bottom)); z-index: 900; background: rgba(255,255,255,0.82); color: var(--text-main); border: 1px solid var(--container-border); border-radius: 999px; font-size: 11px; line-height: 1; font-weight: bold; padding: 6px 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); pointer-events: none; }
+        .setting-section { text-align: left; border: 2px dashed var(--dash-color); border-radius: 18px; padding: 14px; margin: 14px 0; background: #fff; }
+        .setting-section h3 { color: var(--accent-text); margin: 0 0 10px; font-size: 17px; }
+        .theme-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .theme-choice { min-height: 76px; border: 3px solid var(--container-border); border-radius: 18px; background: #fff; color: var(--accent-text); font-family: inherit; font-weight: bold; cursor: pointer; padding: 10px; text-align: left; }
+        .theme-choice.active { border-color: var(--hot-accent); box-shadow: 0 0 0 4px var(--soft-bg); }
+        .theme-swatch { display: flex; gap: 5px; margin-bottom: 8px; }
+        .theme-swatch span { display: block; width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 1px 4px rgba(0,0,0,0.16); }
+        .limit-grid { display: grid; gap: 9px; }
+        .limit-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 14px; background: var(--soft-bg); color: var(--text-main); font-weight: bold; }
+        .limit-row span:last-child { color: var(--accent-text); white-space: nowrap; }
+        .review-list { text-align: left; margin-top: 20px; max-height: 450px; overflow-y: auto; padding-right: 5px; }
+        .review-item { background: #fafafa; border: 2px dashed #ce93d8; border-radius: 20px; margin-bottom: 15px; text-align: left; overflow: hidden; }
+        .review-header { padding: 18px; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: flex-start; background: #fafafa; transition: background 0.2s; gap: 10px; }
+        .review-header:hover { background: #f3e5f5; }
+        .review-header > div { min-width: 0; }
+        .review-item-en { font-size: clamp(19px, 5.5vw, 22px); line-height: 1.2; font-weight: bold; color: #6a1b9a; margin-right: 8px; overflow-wrap: anywhere; }
+        .review-item-jp { font-size: 15px; color: #d81b60; font-weight: bold; margin-top: 2px; }
+        .review-body { padding: 0 18px 18px; border-top: 2px dashed #e1bee7; background: #fafafa; }
+        .review-item-sent-en { font-style: italic; color: #4a235a; font-weight: bold; font-size: 14px; line-height: 1.45; flex-grow: 1; display: inline-block; margin-top: 10px; overflow-wrap: anywhere; }
+        .review-item-sent-jp { font-size: 13px; color: #666; margin-top: 4px; }
+        .small-btn-speak { background-color: #ffd54f; color: #d84315; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; box-shadow: 0 4px 0 #ffb300; display: inline-flex; justify-content: center; align-items: center; font-size: 14px; margin-left: 5px; transition: 0.1s; }
+        .btn-remove { background-color: #ffcdd2; color: #c62828; border: none; padding: 8px 12px; border-radius: 15px; cursor: pointer; font-weight: bold; font-family: inherit; box-shadow: 0 4px 0 #ef9a9a; transition: 0.1s; font-size: 13px; height: fit-content; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 10px; justify-content: center; margin-top: 20px; }
+        .character-card { width: 100%; max-width: 118px; height: 140px; justify-self: center; background-color: #f5f5f5; border: 3px dashed #ccc; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #999; text-align: center; padding: 5px; font-size: 14px; transition: transform 0.2s; white-space: pre-line; overflow: hidden; }
+        .character-card.unlocked { cursor: pointer; border: 3px solid #ff758c; box-shadow: 0 4px 10px rgba(255,117,140,0.4); animation: pop 0.5s ease-out; }
+        .character-card.unlocked:hover { transform: scale(1.05); box-shadow: 0 6px 15px rgba(255,117,140,0.6); }
+        @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes scaleIn { 0% { transform: translate(-50%,-50%) scale(0.5); opacity: 0; } 70% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; display: none; backdrop-filter: blur(5px); }
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 34px; border-radius: 30px; box-shadow: 0 10px 40px rgba(156, 39, 176, 0.5); z-index: 1000; display: none; text-align: center; border: 5px solid #ce93d8; width: min(88vw, 390px); animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .fullscreen-view { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .fullscreen-view.active { opacity: 1; pointer-events: auto; }
+        .fullscreen-img { max-width: 90%; max-height: 70vh; border-radius: 20px; border: 5px solid white; box-shadow: 0 0 30px rgba(255,255,255,0.5); }
+        .fullscreen-text { color: white; text-align: center; margin-top: 20px; }
+        .fs-title { font-size: 20px; color: #ffb74d; font-weight: bold; }
+        .fs-name { font-size: 36px; font-weight: bold; margin-top: 5px; text-shadow: 2px 2px 4px black; }
+        #quiz-word { font-size: clamp(30px, 10vw, 42px) !important; line-height: 1.08; overflow-wrap: anywhere; word-break: break-word; }
+        .pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 20px; }
+        @media (min-width: 768px) {
+            #course-shell:not(.hidden) { display: grid; grid-template-columns: 170px minmax(0, 1fr); grid-template-areas: "toolbar nav" "toolbar content"; column-gap: 18px; align-items: start; width: min(960px, calc(100% - 32px)); margin: 10px auto 30px; }
+            #course-shell .toolbar { grid-area: toolbar; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 14px; padding: 12px 0; position: sticky; top: 82px; }
+            #course-shell .toolbar .jelly-btn { width: 100%; padding-left: 12px; padding-right: 12px; }
+            #course-shell .nav { grid-area: nav; padding: 0 0 12px; }
+            #course-shell > .container { grid-column: 2; width: min(540px, 100%); margin-top: 0; }
+        }
+        @media (max-width: 560px) {
+            header { padding: calc(env(safe-area-inset-top, 0px) + 22px) 12px 13px; font-size: 20px; line-height: 1.18; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
+            .header-user { left: 8px; top: calc(env(safe-area-inset-top, 0px) + 34px); max-width: 24%; font-size: 10px; line-height: 1.1; padding: 5px 7px; border-width: 1.5px; }
+            #app-title { max-width: calc(100% - 140px); }
+            .nav, .toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding-left: 10px; padding-right: 10px; }
+            .toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top: 8px; padding-bottom: 2px; }
+            .nav { padding-top: 4px; padding-bottom: 6px; }
+            .nav .jelly-btn, .toolbar .jelly-btn { width: 100%; min-height: 34px; padding: 7px 8px; border-radius: 16px; box-shadow: 0 4px 0 var(--nav-shadow); font-size: 12px; line-height: 1.15; }
+            .toolbar .jelly-btn { min-height: 30px; padding: 6px 4px; border-radius: 999px; background: rgba(255,255,255,0.78); color: var(--accent-text); border: 1px solid var(--container-border); box-shadow: none; font-size: 11px; }
+            .toolbar .danger-btn { color: #a83232; box-shadow: none; }
+            .toolbar .secondary-btn { color: #1565c0; box-shadow: none; }
+            .toolbar .full-label { display: none; }
+            .toolbar .mobile-label { display: inline; }
+            .container { margin-top: 4px; margin-bottom: 24px; }
+            .home-grid, .input-row { grid-template-columns: 1fr; }
+            .level-card { min-height: 138px; }
+            .jelly-btn { font-size: 14px; padding: 11px 14px; }
+            .row .jelly-btn, .input-row .jelly-btn { flex: 1 1 150px; }
+            .study-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+            .study-actions .jelly-btn { width: 100%; }
+            .teacher-action-spacer { display: none; }
+            .btn-teacher-toggle { grid-column: 2; justify-self: stretch; min-height: 36px; padding: 8px 10px; font-size: 12px; }
+            .teacher-panel { padding: 12px; }
+            .teacher-panel-header { grid-template-columns: 1fr; }
+            .pager .jelly-btn { flex: 1 1 0; }
+            .review-list { max-height: none; }
+            .modal { padding: 24px 16px; border-width: 4px; }
+            .fs-name { font-size: 30px; }
+        }
+        @media (max-width: 380px) {
+            .review-header { grid-template-columns: 1fr; }
+            .btn-remove { justify-self: end; }
+            .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <span class="header-user hidden" id="current-user-pill">ユーザー未選択</span>
+    <span id="app-title">英検 魔法の単語帳</span>
+</header>
+
+<div id="user-screen" class="container wide-container">
+    <h2 class="screen-title">ユーザーを選んでね</h2>
+    <p class="muted">名前だけで使えるよ</p>
+    <div class="input-row">
+        <input id="new-user-name" type="text" maxlength="16" placeholder="なまえ">
+        <button class="jelly-btn" onclick="addUser()">新しく作る</button>
+    </div>
+    <div id="user-list" class="user-list"></div>
+</div>
+
+<div id="home-screen" class="container wide-container hidden">
+    <h2 class="screen-title"><span id="home-user-name">...</span> さんの単語帳</h2>
+    <p class="muted">コースを選んでね</p>
+    <div class="home-grid">
+        <div class="level-card" onclick="enterCourse('pre2')">
+            <strong>英検準2級</strong>
+            <span>重要単語・熟語 500</span>
+        </div>
+        <div class="level-card" onclick="enterCourse('level2')">
+            <strong>英検2級</strong>
+            <span>現在の単語データ</span>
+        </div>
+    </div>
+    <div class="row">
+        <button class="jelly-btn secondary-btn" onclick="goUserScreen()">ユーザー切替</button>
+        <button class="jelly-btn danger-btn" onclick="confirmResetCurrentUser()">進度をリセット</button>
+        <button class="jelly-btn" onclick="openSettings()">設定</button>
+    </div>
+</div>
+
+<div id="course-shell" class="hidden">
+    <div class="toolbar">
+        <button class="jelly-btn secondary-btn" onclick="goHome()"><span class="full-label">コース選択へ</span><span class="mobile-label">← コース</span></button>
+        <button class="jelly-btn danger-btn" onclick="confirmResetCurrentUser()"><span class="full-label">進度をリセット</span><span class="mobile-label">リセット</span></button>
+        <button class="jelly-btn" onclick="openSettings()"><span class="full-label">設定</span><span class="mobile-label">設定</span></button>
+    </div>
+    <div class="nav">
+        <button class="jelly-btn" onclick="switchTab('study')">魔法のカード</button>
+        <button class="jelly-btn" onclick="switchTab('review')">復習ノート</button>
+        <button class="jelly-btn" onclick="switchTab('quiz')">鬼殺隊の試練</button>
+        <button class="jelly-btn" onclick="switchTab('collection')">絆の図鑑</button>
+    </div>
+
+    <div id="study" class="container">
+        <h2 class="screen-title">新しい呪文</h2>
+        <p class="muted">カードをタップして、翻訳魔法を使おう！</p>
+        <div class="row study-actions">
+            <button class="jelly-btn btn-speak" onclick="speakWord()">発音を聞く</button>
+            <button id="btn-star" class="jelly-btn btn-star" onclick="toggleReview()">復習に追加</button>
+            <span class="teacher-action-spacer" aria-hidden="true"></span>
+            <button id="btn-teacher-toggle" class="jelly-btn btn-teacher-toggle" onclick="toggleTeacherPanel(event)">先生に聞く</button>
+        </div>
+        <div class="card" onclick="toggleCard()">
+            <span id="study-word">Loading...</span>
+            <div id="study-details" class="details hidden">
+                <div id="study-jp" style="font-size: 22px; color: #d81b60;">...</div>
+                <hr style="border-top:2px dashed #ce93d8; margin: 15px 0;">
+                <div class="sentence" id="study-en-sent">...</div>
+                <button class="jelly-btn btn-speak" style="padding: 6px 12px; font-size: 14px; margin-top:10px;" onclick="speakSentence(event)">例文を聞く</button>
+                <div id="study-jp-sent" style="font-size: 15px; margin-top: 10px; color: #555;">...</div>
+            </div>
+        </div>
+        <div id="teacher-panel" class="teacher-panel hidden">
+            <div class="teacher-panel-header">
+                <div>
+                    <div class="teacher-title">英語の先生</div>
+                    <div class="teacher-subtitle">この単語について質問できるよ</div>
+                </div>
+                <button class="jelly-btn btn-teacher-stop" onclick="stopTeacherDemo(event)">とめる</button>
+            </div>
+            <div class="teacher-meta">
+                <div>レベル: <span id="teacher-level">...</span></div>
+                <div>質問: <span id="teacher-turns">0 / 5</span></div>
+            </div>
+            <div id="teacher-status" class="teacher-status">日本語でも英語でも質問できるよ。先生は英語で答えるよ。</div>
+            <div class="row teacher-controls">
+                <button id="btn-teacher-mic" class="jelly-btn btn-teacher-mic" onclick="askTeacherDemo(event)">マイク</button>
+            </div>
+        </div>
+        <div class="pager">
+            <button class="jelly-btn" style="background-color: #f48fb1; box-shadow: 0 6px 0 #d81b60;" onclick="nextStudyWord(-1)">前へ</button>
+            <button class="jelly-btn secondary-btn" onclick="nextStudyWord(1)">次へ</button>
+        </div>
+    </div>
+
+    <div id="review" class="container hidden">
+        <h2 class="screen-title">復習ノート</h2>
+        <p class="muted">タップすると例文が開くよ！</p>
+        <div id="review-list" class="review-list"></div>
+    </div>
+
+    <div id="quiz" class="container hidden">
+        <h2 class="screen-title">鬼殺隊入隊試験</h2>
+        <div class="status-box">
+            <div class="level-title" id="current-title">現在の階級：<span id="display-title">訓練生</span></div>
+            <div class="streak-bar">連撃: <span id="streak" style="font-size: 32px;">0</span> / <span id="target">3</span></div>
+            <div style="font-size:12px; color:#666; margin-top: 5px;">クリアで <b id="next-reward" style="color:#d81b60;">...</b> が仲間に！</div>
+        </div>
+        <h1 id="quiz-word" style="font-size: 42px; color: #4a235a; margin: 10px 0;">Loading...</h1>
+        <button class="jelly-btn btn-speak" onclick="speakQuizWord()">発音のヒント</button>
+        <div class="options" id="quiz-options"></div>
+    </div>
+
+    <div id="collection" class="container hidden">
+        <h2 class="screen-title">絆の図鑑</h2>
+        <p class="muted">カードをタップすると大きく表示されるよ！</p>
+        <div class="gallery" id="gallery"></div>
+    </div>
+</div>
+
+<div id="settings-screen" class="container wide-container hidden">
+    <h2 class="screen-title">設定</h2>
+    <p class="muted">テーマと先生の安全設定を確認できます</p>
+    <div class="setting-section">
+        <h3>アプリのテーマ</h3>
+        <div class="theme-grid">
+            <button id="theme-purple" class="theme-choice" onclick="setAppTheme('purple')">
+                <div class="theme-swatch">
+                    <span style="background:#9c27b0;"></span>
+                    <span style="background:#ce93d8;"></span>
+                    <span style="background:#ffd54f;"></span>
+                </div>
+                やさしい紫
+            </button>
+            <button id="theme-navy-sky" class="theme-choice" onclick="setAppTheme('navySky')">
+                <div class="theme-swatch">
+                    <span style="background:#12355b;"></span>
+                    <span style="background:#37b7d8;"></span>
+                    <span style="background:#ffd766;"></span>
+                </div>
+                Navy + Sky
+            </button>
+        </div>
+    </div>
+    <div class="setting-section">
+        <h3>英語の先生 安全設定</h3>
+        <div class="limit-grid">
+            <div class="limit-row"><span>1日の開始</span><span>0 / 5</span></div>
+            <div class="limit-row"><span>今日の時間</span><span>0 / 10分</span></div>
+            <div class="limit-row"><span>1回の時間</span><span>最大3分</span></div>
+        </div>
+    </div>
+    <div class="row">
+        <button class="jelly-btn secondary-btn" onclick="closeSettings()">もどる</button>
+    </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="modal" id="modal">
+    <h2 style="color: #d81b60;" id="modal-title">確認</h2>
+    <p style="color: #666; font-weight: bold; font-size: 16px;" id="modal-desc">...</p>
+    <div id="modal-body"></div>
+    <div class="row" id="modal-actions" style="margin-top: 18px;"></div>
+</div>
+
+<div id="fullscreen-view" class="fullscreen-view" onclick="closeFullscreen()">
+    <img id="fs-img" class="fullscreen-img" src="" alt="character">
+    <div class="fullscreen-text">
+        <div id="fs-title" class="fs-title">階級</div>
+        <div id="fs-name" class="fs-name">名前</div>
+        <div style="font-size:14px;color:#aaa;margin-top:15px;">画面をタップして閉じる</div>
+    </div>
+</div>
+
+<div class="version-badge">v1.1.12</div>
+
+<script src="eiken_pre2_words.js"></script>
+<script src="eiken_grade2_words.js"></script>
+<script>
+const courses = {
+    pre2: { label: "英検準2級", storageKey: "pre2", words: eikenPre2VocabData },
+    level2: { label: "英検2級", storageKey: "level2", words: eikenGrade2VocabData }
+};
+
+const challengeLevels = [
+    { level: 1,  target: 3,  title: "癸 (みずのと)",  reward: "竈門 炭治郎" },
+    { level: 2,  target: 4,  title: "壬 (みずのえ)",  reward: "竈門 禰豆子" },
+    { level: 3,  target: 5,  title: "辛 (かのと)",   reward: "我妻 善逸" },
+    { level: 4,  target: 5,  title: "庚 (かのえ)",   reward: "嘴平 伊之助" },
+    { level: 5,  target: 6,  title: "己 (つちのと)",  reward: "栗花落 カナヲ" },
+    { level: 6,  target: 7,  title: "戊 (つちのえ)",  reward: "不死川 玄弥" },
+    { level: 7,  target: 8,  title: "丁 (ひのと)",   reward: "神崎 アオイ" },
+    { level: 8,  target: 10, title: "丙 (ひのえ)",   reward: "鱗滝 左近次" },
+    { level: 9,  target: 12, title: "乙 (きのと)",   reward: "胡蝶 カナエ" },
+    { level: 10, target: 15, title: "甲 (きのえ)",   reward: "錆兎" },
+    { level: 11, target: 18, title: "水柱",          reward: "冨岡 義勇" },
+    { level: 12, target: 20, title: "蟲柱",          reward: "胡蝶 しのぶ" },
+    { level: 13, target: 22, title: "炎柱",          reward: "煉獄 杏寿郎" },
+    { level: 14, target: 25, title: "音柱",          reward: "宇髄 天元" },
+    { level: 15, target: 28, title: "霞柱",          reward: "時透 無一郎" },
+    { level: 16, target: 30, title: "恋柱",          reward: "甘露寺 蜜璃" },
+    { level: 17, target: 35, title: "蛇柱",          reward: "伊黒 小芭内" },
+    { level: 18, target: 40, title: "風柱",          reward: "不死川 実弥" },
+    { level: 19, target: 45, title: "岩柱",          reward: "悲鳴嶼 行冥" },
+    { level: 20, target: 50, title: "鬼殺隊当主",     reward: "産屋敷 耀哉" }
+];
+
+const STORE_KEY = "eikenPreviewUsersV1";
+const SETTINGS_KEY = "eikenPreviewSettingsV1";
+let appState = { users: [], currentUserId: null };
+let appSettings = { theme: "purple" };
+let settingsReturnScreen = "home-screen";
+let currentCourseId = null;
+let currentQuizWord = null;
+let teacherTurns = 0;
+let teacherListening = false;
+let teacherContextSentKey = null;
+const TEACHER_DEMO_MAX_TURNS = 5;
+const TEACHER_READY_STATUS = "日本語でも英語でも質問できるよ。先生は英語で答えるよ。";
+
+function defaultCourseProgress() {
+    return {
+        currentStudyIndex: 0,
+        streak: 0,
+        currentLevelIndex: 0,
+        quizWordEn: null,
+        quizOptions: [],
+        quizDeckOrder: [],
+        quizDeckPosition: 0,
+        reviewWordsList: [],
+        unlocked: challengeLevels.map(() => false)
+    };
+}
+
+function defaultUser(name) {
+    return {
+        id: String(Date.now()) + Math.random().toString(16).slice(2),
+        name,
+        progress: {
+            pre2: defaultCourseProgress(),
+            level2: defaultCourseProgress()
+        }
+    };
+}
+
+function ensureUserShape(user) {
+    user.progress = user.progress || {};
+    Object.keys(courses).forEach(id => {
+        user.progress[id] = Object.assign(defaultCourseProgress(), user.progress[id] || {});
+        user.progress[id].unlocked = Array.isArray(user.progress[id].unlocked) ? user.progress[id].unlocked.slice(0, challengeLevels.length) : challengeLevels.map(() => false);
+        while (user.progress[id].unlocked.length < challengeLevels.length) user.progress[id].unlocked.push(false);
+        user.progress[id].reviewWordsList = Array.isArray(user.progress[id].reviewWordsList) ? user.progress[id].reviewWordsList : [];
+        user.progress[id].quizWordEn = typeof user.progress[id].quizWordEn === "string" ? user.progress[id].quizWordEn : null;
+        user.progress[id].quizOptions = Array.isArray(user.progress[id].quizOptions) ? user.progress[id].quizOptions : [];
+        user.progress[id].quizDeckOrder = Array.isArray(user.progress[id].quizDeckOrder) ? user.progress[id].quizDeckOrder : [];
+        user.progress[id].quizDeckPosition = Number.isInteger(user.progress[id].quizDeckPosition) ? user.progress[id].quizDeckPosition : 0;
+    });
+}
+
+function readStoredState() {
+    try {
+        const raw = window.localStorage ? window.localStorage.getItem(STORE_KEY) : null;
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+        console.warn("Could not read saved progress. Continuing with temporary state.", e);
+        return null;
+    }
+}
+
+function writeStoredState(state) {
+    try {
+        if (!window.localStorage) return false;
+        window.localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        return true;
+    } catch (e) {
+        console.warn("Could not save progress. Continuing with temporary state.", e);
+        return false;
+    }
+}
+
+function readSettings() {
+    try {
+        const raw = window.localStorage ? window.localStorage.getItem(SETTINGS_KEY) : null;
+        const parsed = raw ? JSON.parse(raw) : {};
+        return Object.assign({ theme: "purple" }, parsed || {});
+    } catch (e) {
+        console.warn("Could not read settings. Continuing with defaults.", e);
+        return { theme: "purple" };
+    }
+}
+
+function saveSettings() {
+    try {
+        if (window.localStorage) window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+    } catch (e) {
+        console.warn("Could not save settings.", e);
+    }
+}
+
+function applyTheme() {
+    document.body.classList.toggle("theme-navy-sky", appSettings.theme === "navySky");
+    const purple = document.getElementById("theme-purple");
+    const navy = document.getElementById("theme-navy-sky");
+    if (purple) purple.classList.toggle("active", appSettings.theme === "purple");
+    if (navy) navy.classList.toggle("active", appSettings.theme === "navySky");
+}
+
+function setAppTheme(theme) {
+    appSettings.theme = theme === "navySky" ? "navySky" : "purple";
+    saveSettings();
+    applyTheme();
+}
+
+function loadAppState() {
+    appState = readStoredState() || { users: [], currentUserId: null };
+    appState.users = Array.isArray(appState.users) ? appState.users : [];
+    appState.users.forEach(ensureUserShape);
+    if (!appState.users.some(u => u.id === appState.currentUserId)) appState.currentUserId = null;
+}
+
+function saveAppState() {
+    writeStoredState(appState);
+}
+
+function getCurrentUser() {
+    return appState.users.find(u => u.id === appState.currentUserId) || null;
+}
+
+function getCourse() {
+    return courses[currentCourseId];
+}
+
+function getProgress() {
+    const user = getCurrentUser();
+    if (!user || !currentCourseId) return null;
+    ensureUserShape(user);
+    return user.progress[currentCourseId];
+}
+
+function showOnly(screenId) {
+    ["user-screen", "home-screen", "course-shell", "settings-screen"].forEach(id => document.getElementById(id).classList.add("hidden"));
+    document.getElementById(screenId).classList.remove("hidden");
+    renderHeader();
+    applyTheme();
+}
+
+function renderHeader() {
+    const user = getCurrentUser();
+    const course = getCourse();
+    const userPill = document.getElementById("current-user-pill");
+    userPill.innerText = user ? `${user.name} さん` : "";
+    userPill.classList.toggle("hidden", !user);
+    document.getElementById("app-title").innerText = course ? `${course.label} 魔法の単語帳` : "英検 魔法の単語帳";
+}
+
+function renderUsers() {
+    const list = document.getElementById("user-list");
+    list.innerHTML = "";
+    if (appState.users.length === 0) {
+        list.innerHTML = '<p class="muted" style="font-size:18px;">まだユーザーがいないよ</p>';
+        return;
+    }
+    appState.users.forEach(user => {
+        const item = document.createElement("div");
+        item.className = "user-item";
+        item.innerHTML = `
+            <button class="user-name-btn">${escapeHtml(user.name)} さん</button>
+            <button class="jelly-btn danger-btn">削除</button>
+        `;
+        item.querySelector(".user-name-btn").onclick = () => selectUser(user.id);
+        item.querySelector(".danger-btn").onclick = () => confirmDeleteUser(user.id);
+        list.appendChild(item);
+    });
+}
+
+function addUser() {
+    const input = document.getElementById("new-user-name");
+    const name = input.value.trim();
+    if (!name) {
+        openModal("名前を入れてね", "ユーザー名を入力してから作成できます。", "", [{ label: "OK", action: closeModal }]);
+        return;
+    }
+    if (appState.users.some(u => u.name === name)) {
+        openModal("同じ名前があります", "別の名前を入れてね。", "", [{ label: "OK", action: closeModal }]);
+        return;
+    }
+    const user = defaultUser(name);
+    appState.users.push(user);
+    appState.currentUserId = user.id;
+    input.value = "";
+    saveAppState();
+    renderUsers();
+    renderHome();
+    showOnly("home-screen");
+}
+
+function selectUser(id) {
+    appState.currentUserId = id;
+    currentCourseId = null;
+    saveAppState();
+    renderHome();
+    showOnly("home-screen");
+}
+
+function confirmDeleteUser(id) {
+    const user = appState.users.find(u => u.id === id);
+    if (!user) return;
+    openModal(
+        "ユーザーを削除しますか？",
+        `${escapeHtml(user.name)} さんの準2級・2級の進度も削除されます。`,
+        "",
+        [
+            { label: "キャンセル", action: closeModal, type: "secondary" },
+            { label: "削除する", action: () => deleteUser(id), type: "danger" }
+        ]
+    );
+}
+
+function deleteUser(id) {
+    appState.users = appState.users.filter(u => u.id !== id);
+    if (appState.currentUserId === id) {
+        appState.currentUserId = null;
+        currentCourseId = null;
+    }
+    saveAppState();
+    closeModal();
+    renderUsers();
+    showOnly("user-screen");
+}
+
+function renderHome() {
+    const user = getCurrentUser();
+    if (!user) return;
+    document.getElementById("home-user-name").innerText = user.name;
+    renderHeader();
+}
+
+function getVisibleScreenId() {
+    return ["user-screen", "home-screen", "course-shell"].find(id => !document.getElementById(id).classList.contains("hidden")) || "home-screen";
+}
+
+function openSettings() {
+    settingsReturnScreen = getVisibleScreenId();
+    showOnly("settings-screen");
+}
+
+function closeSettings() {
+    showOnly(settingsReturnScreen || "home-screen");
+}
+
+function goUserScreen() {
+    stopTeacherConversation();
+    currentCourseId = null;
+    renderUsers();
+    showOnly("user-screen");
+}
+
+function goHome() {
+    stopTeacherConversation();
+    currentCourseId = null;
+    renderHome();
+    showOnly("home-screen");
+}
+
+function enterCourse(courseId) {
+    currentCourseId = courseId;
+    showOnly("course-shell");
+    switchTab("study");
+}
+
+function switchTab(t) {
+    if (t !== "study") stopTeacherConversation();
+    ["study", "review", "quiz", "collection"].forEach(id => document.getElementById(id).classList.add("hidden"));
+    document.getElementById(t).classList.remove("hidden");
+    if (t === "study") loadStudyWord();
+    if (t === "review") renderReviewList();
+    if (t === "quiz") { updateQuizUI(); loadQuizWord(false); }
+    if (t === "collection") renderGallery();
+}
+
+function getWords() {
+    return getCourse().words;
+}
+
+function speak(t) {
+    if (window.AndroidTTS && typeof window.AndroidTTS.speak === "function") {
+        const result = window.AndroidTTS.speak(t);
+        if (result === "ok") return;
+        const debugInfo = window.AndroidTTS.getDebugInfo ? window.AndroidTTS.getDebugInfo() : result;
+        openModal(
+            "発音を使えません",
+            "この端末で英語の音声が使えるTTSエンジンが見つかりませんでした。Androidの音声読み上げ設定を確認してください。<br><br>Debug: " + escapeHtml(debugInfo),
+            "",
+            [
+                { label: "TTS設定", action: openAndroidTtsSettings },
+                { label: "OK", action: closeModal, type: "secondary" }
+            ]
+        );
+        return;
+    }
+    if ("speechSynthesis" in window) {
+        const u = new SpeechSynthesisUtterance(t);
+        u.lang = "en-US";
+        u.rate = 0.85;
+        window.speechSynthesis.speak(u);
+    }
+}
+
+function openAndroidTtsSettings() {
+    closeModal();
+    if (window.AndroidTTS && typeof window.AndroidTTS.openTtsSettings === "function") {
+        window.AndroidTTS.openTtsSettings();
+    }
+}
+
+function loadStudyWord() {
+    const progress = getProgress();
+    const words = getWords();
+    if (!progress || words.length === 0) return;
+    if (progress.currentStudyIndex >= words.length) progress.currentStudyIndex = 0;
+    const w = words[progress.currentStudyIndex];
+    document.getElementById("study-word").innerText = w.en;
+    document.getElementById("study-jp").innerText = w.jp;
+    document.getElementById("study-en-sent").innerText = w.enSent;
+    document.getElementById("study-jp-sent").innerText = w.jpSent;
+    document.getElementById("study-details").classList.add("hidden");
+    resetTeacherPanelForWord();
+    updateStarButton();
+}
+
+function toggleCard() {
+    document.getElementById("study-details").classList.toggle("hidden");
+}
+
+function nextStudyWord(d) {
+    const progress = getProgress();
+    const words = getWords();
+    progress.currentStudyIndex += d;
+    if (progress.currentStudyIndex >= words.length) progress.currentStudyIndex = 0;
+    if (progress.currentStudyIndex < 0) progress.currentStudyIndex = words.length - 1;
+    saveAppState();
+    loadStudyWord();
+}
+
+function speakWord() {
+    const w = getWords()[getProgress().currentStudyIndex];
+    speak(w.en);
+}
+
+function speakSentence(e) {
+    e.stopPropagation();
+    const w = getWords()[getProgress().currentStudyIndex];
+    speak(w.enSent);
+}
+
+function getTeacherLevelLabel() {
+    const course = getCourse();
+    if (!course) return "...";
+    if (currentCourseId === "pre2") return "EIKEN Pre-2";
+    if (currentCourseId === "level2") return "EIKEN 2";
+    return course.label;
+}
+
+function renderTeacherDemo() {
+    const level = document.getElementById("teacher-level");
+    const turns = document.getElementById("teacher-turns");
+    const status = document.getElementById("teacher-status");
+    const mic = document.getElementById("btn-teacher-mic");
+    if (!level || !turns || !status || !mic) return;
+
+    level.innerText = getTeacherLevelLabel();
+    turns.innerText = `${teacherTurns} / ${TEACHER_DEMO_MAX_TURNS}`;
+    mic.disabled = teacherListening || teacherTurns >= TEACHER_DEMO_MAX_TURNS;
+    if (teacherTurns >= TEACHER_DEMO_MAX_TURNS) {
+        status.innerText = "よくできました。カードの学習にもどろう！";
+    } else if (!status.innerText) {
+        status.innerText = TEACHER_READY_STATUS;
+    }
+}
+
+function resetTeacherPanelForWord() {
+    teacherTurns = 0;
+    teacherListening = false;
+    teacherContextSentKey = null;
+    const panel = document.getElementById("teacher-panel");
+    const status = document.getElementById("teacher-status");
+    if (panel) panel.classList.add("hidden");
+    if (status) status.innerText = TEACHER_READY_STATUS;
+    renderTeacherDemo();
+}
+
+function toggleTeacherPanel(e) {
+    if (e) e.stopPropagation();
+    const panel = document.getElementById("teacher-panel");
+    if (!panel) return;
+    panel.classList.toggle("hidden");
+    if (!panel.classList.contains("hidden")) updateTeacherContext();
+    renderTeacherDemo();
+}
+
+function askTeacherDemo(e) {
+    if (e) e.stopPropagation();
+    if (teacherListening || teacherTurns >= TEACHER_DEMO_MAX_TURNS) return;
+    const status = document.getElementById("teacher-status");
+    if (window.AndroidGemini && typeof window.AndroidGemini.startConversation === "function") {
+        if (isAndroidGeminiActive() && teacherContextSentKey === getTeacherContextKey()) {
+            if (status) status.innerText = "聞いています。質問は日本語でも英語でも大丈夫です。";
+            teacherListening = true;
+            renderTeacherDemo();
+            return;
+        }
+        if (status) status.innerText = "先生につないでいます...";
+        teacherListening = true;
+        renderTeacherDemo();
+        window.AndroidGemini.startConversation(JSON.stringify(getTeacherContext()));
+    } else {
+        teacherTurns += 1;
+        if (status && teacherTurns < TEACHER_DEMO_MAX_TURNS) {
+            status.innerText = "聞いています... プレビューではデモの質問を記録します。";
+        }
+        renderTeacherDemo();
+    }
+}
+
+function stopTeacherDemo(e) {
+    if (e) e.stopPropagation();
+    stopTeacherConversation();
+    const status = document.getElementById("teacher-status");
+    if (status && teacherTurns < TEACHER_DEMO_MAX_TURNS) status.innerText = "先生との会話をとめました。";
+    renderTeacherDemo();
+}
+
+function stopTeacherConversation() {
+    teacherListening = false;
+    if (window.AndroidGemini && typeof window.AndroidGemini.stopConversation === "function") {
+        window.AndroidGemini.stopConversation();
+    }
+}
+
+function resetTeacherConversation() {
+    teacherListening = false;
+    if (window.AndroidGemini && typeof window.AndroidGemini.resetConversation === "function") {
+        window.AndroidGemini.resetConversation();
+    } else if (window.AndroidGemini && typeof window.AndroidGemini.stopConversation === "function") {
+        window.AndroidGemini.stopConversation();
+    }
+}
+
+function updateTeacherContext() {
+    if (window.AndroidGemini && typeof window.AndroidGemini.updateContext === "function") {
+        if (!isAndroidGeminiActive()) return;
+        const contextKey = getTeacherContextKey();
+        if (teacherContextSentKey === contextKey) return;
+        teacherContextSentKey = contextKey;
+        const status = document.getElementById("teacher-status");
+        if (status) status.innerText = "先生に新しい単語を伝えています...";
+        teacherListening = true;
+        renderTeacherDemo();
+        window.AndroidGemini.updateContext(JSON.stringify(getTeacherContext()));
+    }
+}
+
+function isAndroidGeminiActive() {
+    if (!window.AndroidGemini || typeof window.AndroidGemini.getStatus !== "function") return false;
+    return window.AndroidGemini.getStatus() === "active";
+}
+
+function getTeacherContextKey() {
+    const progress = getProgress();
+    const words = getWords();
+    if (!progress || !words[progress.currentStudyIndex]) return "";
+    return `${currentCourseId}:${progress.currentStudyIndex}:${words[progress.currentStudyIndex].en}`;
+}
+
+function getTeacherContext() {
+    const words = getWords();
+    const progress = getProgress();
+    const w = words[progress.currentStudyIndex];
+    return {
+        courseId: currentCourseId,
+        levelLabel: getTeacherLevelLabel(),
+        word: w.en,
+        jp: w.jp,
+        enSent: w.enSent,
+        jpSent: w.jpSent,
+        turns: teacherTurns,
+        maxTurns: TEACHER_DEMO_MAX_TURNS
+    };
+}
+
+function onGeminiTeacherStatus(status, message, turns) {
+    const statusBox = document.getElementById("teacher-status");
+    if (statusBox && message) statusBox.innerText = message;
+    if (Number.isInteger(turns) && turns >= 0) {
+        teacherTurns = Math.min(TEACHER_DEMO_MAX_TURNS, turns);
+    }
+    if (status === "connecting" || status === "permission_required" || status === "active") {
+        teacherListening = true;
+    }
+    if (status === "started") {
+        teacherListening = true;
+    }
+    if (status === "turn_completed") {
+        teacherListening = true;
+    }
+    if (status === "limit_reached") {
+        teacherListening = false;
+        teacherTurns = TEACHER_DEMO_MAX_TURNS;
+    }
+    if (status === "stopped" || status === "error" || status === "permission_denied") {
+        teacherListening = false;
+    }
+    renderTeacherDemo();
+}
+
+function toggleReview() {
+    const progress = getProgress();
+    const en = getWords()[progress.currentStudyIndex].en;
+    const idx = progress.reviewWordsList.indexOf(en);
+    if (idx > -1) progress.reviewWordsList.splice(idx, 1);
+    else progress.reviewWordsList.push(en);
+    saveAppState();
+    updateStarButton();
+}
+
+function updateStarButton() {
+    const progress = getProgress();
+    const en = getWords()[progress.currentStudyIndex].en;
+    const btn = document.getElementById("btn-star");
+    if (progress.reviewWordsList.includes(en)) {
+        btn.innerText = "復習から外す";
+        btn.classList.add("btn-starred");
+    } else {
+        btn.innerText = "復習に追加";
+        btn.classList.remove("btn-starred");
+    }
+}
+
+function renderReviewList() {
+    const progress = getProgress();
+    const words = getWords();
+    const list = document.getElementById("review-list");
+    list.innerHTML = "";
+    if (progress.reviewWordsList.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px; font-size:18px;">ノートは空っぽだよ！<br><br>全部覚えたね！</p>';
+        return;
+    }
+    progress.reviewWordsList.forEach((en, index) => {
+        const w = words.find(x => x.en === en);
+        if (!w) return;
+        const div = document.createElement("div");
+        div.className = "review-item";
+        div.innerHTML = `
+            <div class="review-header">
+                <div>
+                    <div style="display:flex; align-items:center;">
+                        <span class="review-item-en">${escapeHtml(w.en)}</span>
+                        <button class="small-btn-speak" data-action="word">♪</button>
+                    </div>
+                    <div class="review-item-jp">${escapeHtml(w.jp)}</div>
+                </div>
+                <button class="btn-remove">覚えた！</button>
+            </div>
+            <div class="review-body hidden">
+                <div style="display:flex; align-items:center;">
+                    <span class="review-item-sent-en">${escapeHtml(w.enSent)}</span>
+                    <button class="small-btn-speak" data-action="sent" style="margin-top:10px;">♪</button>
+                </div>
+                <div class="review-item-sent-jp">${escapeHtml(w.jpSent)}</div>
+            </div>
+        `;
+        div.querySelector(".review-header").onclick = () => div.querySelector(".review-body").classList.toggle("hidden");
+        div.querySelector('[data-action="word"]').onclick = e => { e.stopPropagation(); speak(w.en); };
+        div.querySelector('[data-action="sent"]').onclick = e => { e.stopPropagation(); speak(w.enSent); };
+        div.querySelector(".btn-remove").onclick = e => {
+            e.stopPropagation();
+            progress.reviewWordsList.splice(index, 1);
+            saveAppState();
+            renderReviewList();
+        };
+        list.appendChild(div);
+    });
+}
+
+function updateQuizUI() {
+    const progress = getProgress();
+    if (progress.currentLevelIndex >= challengeLevels.length) {
+        document.getElementById("current-title").innerHTML = 'あなたはすでに <span style="font-size:24px; color:#ff9800;">伝説の柱</span> です！';
+        document.getElementById("streak").innerText = progress.streak;
+        document.getElementById("target").innerText = "∞";
+        document.getElementById("next-reward").innerText = "すべて収集済み";
+        return;
+    }
+    const info = challengeLevels[progress.currentLevelIndex];
+    const title = progress.currentLevelIndex === 0 ? "訓練生" : challengeLevels[progress.currentLevelIndex - 1].title;
+    document.getElementById("display-title").innerText = title;
+    document.getElementById("target").innerText = info.target;
+    document.getElementById("next-reward").innerText = info.reward;
+    document.getElementById("streak").innerText = progress.streak;
+}
+
+function loadQuizWord(forceNew) {
+    const words = getWords();
+    const progress = getProgress();
+    if (!progress) return;
+    if (forceNew || !progress.quizWordEn || !words.some(w => w.en === progress.quizWordEn)) {
+        const nextWord = getNextQuizDeckWord(progress, words);
+        progress.quizWordEn = nextWord.en;
+        progress.quizOptions = buildQuizOptions(nextWord, words);
+        saveAppState();
+    }
+    currentQuizWord = words.find(w => w.en === progress.quizWordEn);
+    if (!currentQuizWord) {
+        progress.quizWordEn = null;
+        progress.quizOptions = [];
+        loadQuizWord(true);
+        return;
+    }
+    document.getElementById("quiz-word").innerText = currentQuizWord.en;
+    const opts = Array.isArray(progress.quizOptions) && progress.quizOptions.includes(currentQuizWord.jp)
+        ? progress.quizOptions.slice()
+        : buildQuizOptions(currentQuizWord, words);
+    progress.quizOptions = opts.slice();
+    saveAppState();
+    renderQuizOptions(opts);
+}
+
+function isPhraseEntry(word) {
+    return /\s|[?]/.test(word.en);
+}
+
+function quizHash(value) {
+    let hash = 2166136261;
+    for (let i = 0; i < value.length; i++) {
+        hash ^= value.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+}
+
+function shuffledByQuizHash(entries, salt) {
+    return entries.slice().sort((a, b) => quizHash(a.en + salt) - quizHash(b.en + salt));
+}
+
+function interleaveQuizEntries(words, blockIndex) {
+    const phraseEntries = shuffledByQuizHash(words.filter(isPhraseEntry), `phrase-${blockIndex}`);
+    const wordEntries = shuffledByQuizHash(words.filter(w => !isPhraseEntry(w)), `word-${blockIndex}`);
+    const first = blockIndex % 2 === 0 ? wordEntries : phraseEntries;
+    const second = blockIndex % 2 === 0 ? phraseEntries : wordEntries;
+    const mixed = [];
+    const max = Math.max(first.length, second.length);
+    for (let i = 0; i < max; i++) {
+        if (first[i]) mixed.push(first[i]);
+        if (second[i]) mixed.push(second[i]);
+    }
+    return mixed;
+}
+
+function buildQuizDeckOrder(words) {
+    const blockSize = 80;
+    const order = [];
+    for (let i = 0; i < words.length; i += blockSize) {
+        order.push(...interleaveQuizEntries(words.slice(i, i + blockSize), i / blockSize));
+    }
+    return order.map(w => w.en);
+}
+
+function ensureQuizDeck(progress, words) {
+    const wordSet = new Set(words.map(w => w.en));
+    const validDeck = progress.quizDeckOrder.length === words.length
+        && progress.quizDeckOrder.every(en => wordSet.has(en));
+    if (!validDeck) {
+        progress.quizDeckOrder = buildQuizDeckOrder(words);
+        progress.quizDeckPosition = 0;
+    }
+    if (progress.quizDeckPosition < 0 || progress.quizDeckPosition >= progress.quizDeckOrder.length) {
+        progress.quizDeckPosition = 0;
+    }
+}
+
+function getNextQuizDeckWord(progress, words) {
+    ensureQuizDeck(progress, words);
+    const en = progress.quizDeckOrder[progress.quizDeckPosition];
+    progress.quizDeckPosition = (progress.quizDeckPosition + 1) % progress.quizDeckOrder.length;
+    return words.find(w => w.en === en) || words[0];
+}
+
+function buildQuizOptions(word, words) {
+    const opts = [word.jp];
+    while (opts.length < Math.min(4, words.length)) {
+        const jp = words[Math.floor(Math.random() * words.length)].jp;
+        if (!opts.includes(jp)) opts.push(jp);
+    }
+    opts.sort(() => Math.random() - 0.5);
+    return opts;
+}
+
+function renderQuizOptions(opts) {
+    const div = document.getElementById("quiz-options");
+    div.innerHTML = "";
+    opts.forEach(o => {
+        const b = document.createElement("button");
+        b.className = "option-btn";
+        b.innerText = o;
+        b.onclick = () => checkAnswer(o, b);
+        div.appendChild(b);
+    });
+}
+
+function speakQuizWord() {
+    if (currentQuizWord) speak(currentQuizWord.en);
+}
+
+function checkAnswer(sel, btn) {
+    const progress = getProgress();
+    document.querySelectorAll(".option-btn").forEach(b => b.disabled = true);
+    if (sel === currentQuizWord.jp) {
+        btn.style.backgroundColor = "#a5d6a7";
+        btn.style.borderColor = "#4caf50";
+        btn.style.color = "#1b5e20";
+        progress.streak++;
+        document.getElementById("streak").innerText = progress.streak;
+        saveAppState();
+        setTimeout(() => {
+            if (progress.currentLevelIndex < challengeLevels.length && progress.streak >= challengeLevels[progress.currentLevelIndex].target) levelUp();
+            else {
+                progress.quizWordEn = null;
+                progress.quizOptions = [];
+                loadQuizWord(true);
+            }
+        }, 500);
+    } else {
+        btn.style.backgroundColor = "#ef9a9a";
+        btn.style.borderColor = "#f44336";
+        btn.style.color = "#b71c1c";
+        progress.streak = 0;
+        document.getElementById("streak").innerText = progress.streak;
+        saveAppState();
+        setTimeout(() => {
+            progress.quizWordEn = null;
+            progress.quizOptions = [];
+            loadQuizWord(true);
+        }, 700);
+    }
+}
+
+function levelUp() {
+    const progress = getProgress();
+    progress.streak = 0;
+    const lvl = challengeLevels[progress.currentLevelIndex];
+    progress.unlocked[progress.currentLevelIndex] = true;
+    progress.currentLevelIndex++;
+    saveAppState();
+    updateQuizUI();
+    openModal(
+        `階級昇格：【${lvl.title}】！`,
+        "新しい仲間が駆けつけた！",
+        `<img src="images/char_${progress.currentLevelIndex - 1}.jpg" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #ce93d8; box-shadow:0 5px 15px rgba(0,0,0,0.3); margin-bottom:10px;" alt="character"><br><span style="font-size:28px; color:#4a235a;">${escapeHtml(lvl.reward)}</span>`,
+        [{ label: "次の試練へ", action: () => { closeModal(); progress.quizWordEn = null; progress.quizOptions = []; loadQuizWord(true); } }]
+    );
+}
+
+function renderGallery() {
+    const progress = getProgress();
+    const gallery = document.getElementById("gallery");
+    gallery.innerHTML = "";
+    challengeLevels.forEach((c, idx) => {
+        const d = document.createElement("div");
+        d.className = "character-card " + (progress.unlocked[idx] ? "unlocked" : "");
+        if (progress.unlocked[idx]) {
+            d.style.backgroundImage = `url('images/char_${idx}.jpg')`;
+            d.style.backgroundSize = "cover";
+            d.style.backgroundPosition = "center";
+            d.innerHTML = `
+                <div style="background:rgba(0,0,0,0.5); width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; border-radius:12px; color:white; text-shadow:1px 1px 3px black; padding:5px;">
+                    <span style="font-size:12px;">${escapeHtml(c.title)}</span>
+                    <strong style="font-size:14px; margin-top:5px; white-space:pre-line">${escapeHtml(c.reward)}</strong>
+                </div>
+            `;
+            d.onclick = () => showFullscreen(idx, c.title, c.reward);
+        } else {
+            d.innerText = "ロック中\n未知の仲間";
+        }
+        gallery.appendChild(d);
+    });
+}
+
+function showFullscreen(idx, title, name) {
+    document.getElementById("fs-img").src = `images/char_${idx}.jpg`;
+    document.getElementById("fs-title").innerText = title;
+    document.getElementById("fs-name").innerText = name;
+    document.getElementById("fullscreen-view").classList.add("active");
+}
+
+function closeFullscreen() {
+    document.getElementById("fullscreen-view").classList.remove("active");
+}
+
+function confirmResetCurrentUser() {
+    const user = getCurrentUser();
+    if (!user) return;
+    openModal(
+        "進度をリセットしますか？",
+        `${escapeHtml(user.name)} さんの準2級・2級の進度、復習ノート、階級、図鑑をリセットします。`,
+        "",
+        [
+            { label: "キャンセル", action: closeModal, type: "secondary" },
+            { label: "リセットする", action: resetCurrentUserProgress, type: "danger" }
+        ]
+    );
+}
+
+function resetCurrentUserProgress() {
+    const user = getCurrentUser();
+    if (!user) return;
+    user.progress = { pre2: defaultCourseProgress(), level2: defaultCourseProgress() };
+    saveAppState();
+    closeModal();
+    if (currentCourseId) switchTab("study");
+    renderHome();
+}
+
+function openModal(title, desc, body, actions) {
+    document.getElementById("modal-title").innerHTML = title;
+    document.getElementById("modal-desc").innerHTML = desc;
+    document.getElementById("modal-body").innerHTML = body || "";
+    const actionBox = document.getElementById("modal-actions");
+    actionBox.innerHTML = "";
+    actions.forEach(a => {
+        const btn = document.createElement("button");
+        btn.className = "jelly-btn " + (a.type === "danger" ? "danger-btn" : a.type === "secondary" ? "secondary-btn" : "");
+        btn.innerText = a.label;
+        btn.onclick = a.action;
+        actionBox.appendChild(btn);
+    });
+    document.getElementById("overlay").style.display = "block";
+    document.getElementById("modal").style.display = "block";
+}
+
+function closeModal() {
+    document.getElementById("overlay").style.display = "none";
+    document.getElementById("modal").style.display = "none";
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+window.onload = function() {
+    appSettings = readSettings();
+    applyTheme();
+    loadAppState();
+    renderUsers();
+    if (getCurrentUser()) {
+        renderHome();
+        showOnly("home-screen");
+    } else {
+        showOnly("user-screen");
+    }
+    registerServiceWorker();
+};
+
+function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("service-worker.js").catch(error => {
+        console.warn("Service worker registration failed.", error);
+    });
+}
+</script>
+</body>
+</html>

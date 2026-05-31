@@ -405,7 +405,7 @@
     </div>
 </div>
 
-<div class="version-badge">v1.1.14</div>
+<div class="version-badge">v1.1.14-pwa.5</div>
 
 <script src="eiken_grade4_words.js"></script>
 <script src="eiken_grade3_words.js"></script>
@@ -462,6 +462,9 @@ let teacherTickSaveCounter = 0;
 let teacherRecognition = null;
 let teacherRecognitionHeardText = "";
 let teacherLastAnsweredText = "";
+let teacherPendingStudentQuestion = null;
+let teacherAnswerSeenForPendingQuestion = false;
+let teacherLastCountedQuestion = "";
 const TEACHER_MAX_QUESTIONS = 5;
 const TEACHER_WORD_LIMIT_SECONDS = 20 * 60;
 const TEACHER_DAILY_LIMIT_SECONDS = 60 * 60;
@@ -892,6 +895,9 @@ function resetTeacherPanelForWord() {
     teacherWordSeconds = 0;
     teacherRecognitionHeardText = "";
     teacherLastAnsweredText = "";
+    teacherPendingStudentQuestion = null;
+    teacherAnswerSeenForPendingQuestion = false;
+    teacherLastCountedQuestion = "";
     const panel = document.getElementById("teacher-panel");
     const status = document.getElementById("teacher-status");
     if (panel) panel.classList.add("hidden");
@@ -995,10 +1001,11 @@ function startBrowserTeacherSpeech(status) {
         return;
     }
 
-    teacherTurns += 1;
     teacherListening = true;
     teacherRecognitionHeardText = "";
     teacherLastAnsweredText = "";
+    teacherPendingStudentQuestion = null;
+    teacherAnswerSeenForPendingQuestion = false;
     startTeacherTimer();
     renderTeacherDemo();
 
@@ -1025,6 +1032,8 @@ function startBrowserTeacherSpeech(status) {
         const heard = finalText || interimText;
         if (heard) {
             teacherRecognitionHeardText = heard;
+            teacherPendingStudentQuestion = heard;
+            teacherAnswerSeenForPendingQuestion = false;
             if (status) {
                 status.innerText = `聞こえました: ${heard}`;
             }
@@ -1081,11 +1090,12 @@ function askTeacherByText(e) {
         if (status) status.innerText = "質問を入力してから押してください。";
         return;
     }
-    teacherTurns += 1;
     teacherWordSeconds = Math.min(TEACHER_WORD_LIMIT_SECONDS, teacherWordSeconds + 1);
     const usage = getTeacherDailyUsage();
     usage.usedSeconds = Math.min(TEACHER_DAILY_LIMIT_SECONDS, (usage.usedSeconds || 0) + 1);
     teacherLastAnsweredText = "";
+    teacherPendingStudentQuestion = question;
+    teacherAnswerSeenForPendingQuestion = false;
     if (input) input.value = "";
     answerBrowserTeacherQuestion(question);
     saveAppState();
@@ -1096,12 +1106,32 @@ function answerBrowserTeacherQuestion(questionText) {
     const cleanedQuestion = String(questionText || "").trim();
     if (!cleanedQuestion || cleanedQuestion === teacherLastAnsweredText) return;
     teacherLastAnsweredText = cleanedQuestion;
+    countTeacherQuestionOnce(cleanedQuestion);
     const answer = buildBrowserTeacherAnswer(cleanedQuestion);
     const status = document.getElementById("teacher-status");
     if (status) {
         status.innerText = `聞こえました: ${cleanedQuestion}\n先生: ${answer}`;
     }
     speakTeacherAnswer(answer);
+}
+
+function countTeacherQuestionOnce(questionText) {
+    const normalized = normalizeTeacherQuestion(questionText);
+    if (!normalized) return false;
+    const pending = normalizeTeacherQuestion(teacherPendingStudentQuestion);
+    if (pending && normalized !== pending) return false;
+    if (teacherAnswerSeenForPendingQuestion && teacherLastCountedQuestion === normalized) return false;
+    if (teacherTurns >= TEACHER_MAX_QUESTIONS) return false;
+    teacherTurns += 1;
+    teacherAnswerSeenForPendingQuestion = true;
+    teacherLastCountedQuestion = normalized;
+    saveAppState();
+    renderTeacherDemo();
+    return true;
+}
+
+function normalizeTeacherQuestion(value) {
+    return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 function buildBrowserTeacherAnswer(questionText) {

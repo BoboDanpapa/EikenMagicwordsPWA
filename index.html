@@ -114,6 +114,7 @@
         .teacher-subtitle { color: #777; font-size: 13px; line-height: 1.35; font-weight: bold; }
         .teacher-meta { display: grid; gap: 5px; margin: 12px 0; color: #555; font-size: 13px; font-weight: bold; }
         .teacher-meta span { color: #1565c0; }
+        .teacher-time-row { display: flex; justify-content: space-between; gap: 10px; }
         .teacher-status { background: var(--soft-bg); border-radius: 14px; color: var(--text-main); font-size: 13px; line-height: 1.35; font-weight: bold; padding: 10px 12px; margin-bottom: 12px; }
         .teacher-controls { justify-content: flex-start; gap: 8px; }
         .btn-teacher-mic, .btn-teacher-stop { min-height: 38px; padding: 8px 14px; border-radius: 18px; font-size: 13px; }
@@ -303,6 +304,9 @@
             <div class="teacher-meta">
                 <div>レベル: <span id="teacher-level">...</span></div>
                 <div>質問: <span id="teacher-turns">0 / 5</span></div>
+                <div class="teacher-time-row"><span>この単語</span><span id="teacher-word-time">0:00 / 20:00</span></div>
+                <div class="teacher-time-row"><span>今日</span><span id="teacher-day-time">0:00 / 60:00</span></div>
+                <div class="teacher-time-row"><span>のこり</span><span id="teacher-day-remaining">60:00</span></div>
             </div>
             <div id="teacher-status" class="teacher-status">日本語でも英語でも質問できるよ。先生は英語で答えるよ。</div>
             <div class="row teacher-controls">
@@ -367,9 +371,9 @@
     <div class="setting-section">
         <h3>英語の先生 安全設定</h3>
         <div class="limit-grid">
-            <div class="limit-row"><span>1日の開始</span><span>0 / 5</span></div>
-            <div class="limit-row"><span>今日の時間</span><span>0 / 10分</span></div>
-            <div class="limit-row"><span>1回の時間</span><span>最大3分</span></div>
+            <div class="limit-row"><span>1単語の質問</span><span>最大5回</span></div>
+            <div class="limit-row"><span>1単語の時間</span><span>最大20分</span></div>
+            <div class="limit-row"><span>今日の時間</span><span>最大60分</span></div>
         </div>
     </div>
     <div class="row">
@@ -445,7 +449,14 @@ let currentQuizWord = null;
 let teacherTurns = 0;
 let teacherListening = false;
 let teacherContextSentKey = null;
-const TEACHER_DEMO_MAX_TURNS = 5;
+let teacherWordSeconds = 0;
+let teacherTimerId = null;
+let teacherTickSaveCounter = 0;
+let teacherRecognition = null;
+let teacherRecognitionHeardText = "";
+const TEACHER_MAX_QUESTIONS = 5;
+const TEACHER_WORD_LIMIT_SECONDS = 20 * 60;
+const TEACHER_DAILY_LIMIT_SECONDS = 60 * 60;
 const TEACHER_READY_STATUS = "日本語でも英語でも質問できるよ。先生は英語で答えるよ。";
 
 function defaultCourseProgress() {
@@ -473,12 +484,14 @@ function defaultUser(name) {
     return {
         id: String(Date.now()) + Math.random().toString(16).slice(2),
         name,
-        progress: defaultAllCourseProgress()
+        progress: defaultAllCourseProgress(),
+        teacherUsageByDate: {}
     };
 }
 
 function ensureUserShape(user) {
     user.progress = user.progress || {};
+    user.teacherUsageByDate = user.teacherUsageByDate && typeof user.teacherUsageByDate === "object" ? user.teacherUsageByDate : {};
     Object.keys(courses).forEach(id => {
         user.progress[id] = Object.assign(defaultCourseProgress(), user.progress[id] || {});
         user.progress[id].unlocked = Array.isArray(user.progress[id].unlocked) ? user.progress[id].unlocked.slice(0, challengeLevels.length) : challengeLevels.map(() => false);
@@ -569,6 +582,38 @@ function getProgress() {
     if (!user || !currentCourseId) return null;
     ensureUserShape(user);
     return user.progress[currentCourseId];
+}
+
+function getTeacherUsageDateKey() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function getTeacherDailyUsage() {
+    const user = getCurrentUser();
+    if (!user) return { usedSeconds: 0 };
+    ensureUserShape(user);
+    const today = getTeacherUsageDateKey();
+    user.teacherUsageByDate[today] = user.teacherUsageByDate[today] || { usedSeconds: 0 };
+    return user.teacherUsageByDate[today];
+}
+
+function formatTeacherTime(totalSeconds) {
+    const seconds = Math.max(0, Math.floor(totalSeconds || 0));
+    const minutes = Math.floor(seconds / 60);
+    const rest = String(seconds % 60).padStart(2, "0");
+    return `${minutes}:${rest}`;
+}
+
+function getTeacherDailyUsedSeconds() {
+    return Math.min(TEACHER_DAILY_LIMIT_SECONDS, getTeacherDailyUsage().usedSeconds || 0);
+}
+
+function getTeacherDailyRemainingSeconds() {
+    return Math.max(0, TEACHER_DAILY_LIMIT_SECONDS - getTeacherDailyUsedSeconds());
 }
 
 function showOnly(screenId) {
@@ -805,14 +850,27 @@ function getTeacherLevelLabel() {
 function renderTeacherDemo() {
     const level = document.getElementById("teacher-level");
     const turns = document.getElementById("teacher-turns");
+    const wordTime = document.getElementById("teacher-word-time");
+    const dayTime = document.getElementById("teacher-day-time");
+    const dayRemaining = document.getElementById("teacher-day-remaining");
     const status = document.getElementById("teacher-status");
     const mic = document.getElementById("btn-teacher-mic");
     if (!level || !turns || !status || !mic) return;
 
     level.innerText = getTeacherLevelLabel();
-    turns.innerText = `${teacherTurns} / ${TEACHER_DEMO_MAX_TURNS}`;
-    mic.disabled = teacherListening || teacherTurns >= TEACHER_DEMO_MAX_TURNS;
-    if (teacherTurns >= TEACHER_DEMO_MAX_TURNS) {
+    turns.innerText = `${teacherTurns} / ${TEACHER_MAX_QUESTIONS}`;
+    if (wordTime) wordTime.innerText = `${formatTeacherTime(teacherWordSeconds)} / ${formatTeacherTime(TEACHER_WORD_LIMIT_SECONDS)}`;
+    if (dayTime) dayTime.innerText = `${formatTeacherTime(getTeacherDailyUsedSeconds())} / ${formatTeacherTime(TEACHER_DAILY_LIMIT_SECONDS)}`;
+    if (dayRemaining) dayRemaining.innerText = formatTeacherTime(getTeacherDailyRemainingSeconds());
+    const questionLimitReached = teacherTurns >= TEACHER_MAX_QUESTIONS;
+    const wordLimitReached = teacherWordSeconds >= TEACHER_WORD_LIMIT_SECONDS;
+    const dailyLimitReached = getTeacherDailyRemainingSeconds() <= 0;
+    mic.disabled = teacherListening || questionLimitReached || wordLimitReached || dailyLimitReached;
+    if (dailyLimitReached) {
+        status.innerText = "今日の先生時間を使い切りました。また明日使おう！";
+    } else if (wordLimitReached) {
+        status.innerText = "この単語の先生時間は終わりです。次のカードへ進もう！";
+    } else if (questionLimitReached) {
         status.innerText = "よくできました。カードの学習にもどろう！";
     } else if (!status.innerText) {
         status.innerText = TEACHER_READY_STATUS;
@@ -823,6 +881,8 @@ function resetTeacherPanelForWord() {
     teacherTurns = 0;
     teacherListening = false;
     teacherContextSentKey = null;
+    teacherWordSeconds = 0;
+    teacherRecognitionHeardText = "";
     const panel = document.getElementById("teacher-panel");
     const status = document.getElementById("teacher-status");
     if (panel) panel.classList.add("hidden");
@@ -841,7 +901,10 @@ function toggleTeacherPanel(e) {
 
 function askTeacherDemo(e) {
     if (e) e.stopPropagation();
-    if (teacherListening || teacherTurns >= TEACHER_DEMO_MAX_TURNS) return;
+    if (teacherListening || teacherTurns >= TEACHER_MAX_QUESTIONS || teacherWordSeconds >= TEACHER_WORD_LIMIT_SECONDS || getTeacherDailyRemainingSeconds() <= 0) {
+        renderTeacherDemo();
+        return;
+    }
     const status = document.getElementById("teacher-status");
     if (window.AndroidGemini && typeof window.AndroidGemini.startConversation === "function") {
         if (isAndroidGeminiActive() && teacherContextSentKey === getTeacherContextKey()) {
@@ -852,14 +915,11 @@ function askTeacherDemo(e) {
         }
         if (status) status.innerText = "先生につないでいます...";
         teacherListening = true;
+        startTeacherTimer();
         renderTeacherDemo();
         window.AndroidGemini.startConversation(JSON.stringify(getTeacherContext()));
     } else {
-        teacherTurns += 1;
-        if (status && teacherTurns < TEACHER_DEMO_MAX_TURNS) {
-            status.innerText = "聞いています... プレビューではデモの質問を記録します。";
-        }
-        renderTeacherDemo();
+        startBrowserTeacherSpeech(status);
     }
 }
 
@@ -867,12 +927,14 @@ function stopTeacherDemo(e) {
     if (e) e.stopPropagation();
     stopTeacherConversation();
     const status = document.getElementById("teacher-status");
-    if (status && teacherTurns < TEACHER_DEMO_MAX_TURNS) status.innerText = "先生との会話をとめました。";
+    if (status && teacherTurns < TEACHER_MAX_QUESTIONS) status.innerText = "先生との会話をとめました。";
     renderTeacherDemo();
 }
 
 function stopTeacherConversation() {
     teacherListening = false;
+    stopBrowserTeacherSpeech();
+    stopTeacherTimer(true);
     if (window.AndroidGemini && typeof window.AndroidGemini.stopConversation === "function") {
         window.AndroidGemini.stopConversation();
     }
@@ -880,6 +942,7 @@ function stopTeacherConversation() {
 
 function resetTeacherConversation() {
     teacherListening = false;
+    stopBrowserTeacherSpeech();
     if (window.AndroidGemini && typeof window.AndroidGemini.resetConversation === "function") {
         window.AndroidGemini.resetConversation();
     } else if (window.AndroidGemini && typeof window.AndroidGemini.stopConversation === "function") {
@@ -896,9 +959,150 @@ function updateTeacherContext() {
         const status = document.getElementById("teacher-status");
         if (status) status.innerText = "先生に新しい単語を伝えています...";
         teacherListening = true;
+        startTeacherTimer();
         renderTeacherDemo();
         window.AndroidGemini.updateContext(JSON.stringify(getTeacherContext()));
     }
+}
+
+function getSpeechRecognitionConstructor() {
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function startBrowserTeacherSpeech(status) {
+    const Recognition = getSpeechRecognitionConstructor();
+    if (!Recognition) {
+        if (status) {
+            status.innerText = "このPWAでは、このブラウザのマイク聞き取りに対応していません。Android版の先生会話、またはChromeなど対応ブラウザで試してください。";
+        }
+        renderTeacherDemo();
+        return;
+    }
+
+    teacherTurns += 1;
+    teacherListening = true;
+    teacherRecognitionHeardText = "";
+    startTeacherTimer();
+    renderTeacherDemo();
+
+    const recognition = new Recognition();
+    teacherRecognition = recognition;
+    recognition.lang = "ja-JP";
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+        if (status) status.innerText = "聞いています。質問を話してください。";
+        renderTeacherDemo();
+    };
+
+    recognition.onresult = event => {
+        let finalText = "";
+        let interimText = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const text = event.results[i][0] ? event.results[i][0].transcript.trim() : "";
+            if (!text) continue;
+            if (event.results[i].isFinal) finalText += text;
+            else interimText += text;
+        }
+        const heard = finalText || interimText;
+        if (heard) {
+            teacherRecognitionHeardText = heard;
+            if (status) {
+                status.innerText = `聞こえました: ${heard}\nPWA版ではAI先生の回答はまだ未接続です。`;
+            }
+        }
+    };
+
+    recognition.onerror = event => {
+        teacherListening = false;
+        stopTeacherTimer(true);
+        if (status) {
+            status.innerText = event.error === "not-allowed"
+                ? "マイクの許可がありません。ブラウザのマイク許可を確認してください。"
+                : "マイクの聞き取りに失敗しました。もう一度試してください。";
+        }
+        renderTeacherDemo();
+    };
+
+    recognition.onend = () => {
+        teacherListening = false;
+        stopTeacherTimer(true);
+        teacherRecognition = null;
+        if (status && !teacherRecognitionHeardText && teacherTurns < TEACHER_MAX_QUESTIONS) {
+            status.innerText = "聞き取りが終わりました。もう一度マイクを押して話してください。";
+        }
+        renderTeacherDemo();
+    };
+
+    try {
+        recognition.start();
+    } catch (error) {
+        teacherListening = false;
+        stopTeacherTimer(true);
+        teacherRecognition = null;
+        if (status) status.innerText = "マイクを開始できませんでした。もう一度試してください。";
+        renderTeacherDemo();
+    }
+}
+
+function stopBrowserTeacherSpeech() {
+    if (!teacherRecognition) return;
+    const recognition = teacherRecognition;
+    teacherRecognition = null;
+    try {
+        recognition.stop();
+    } catch (error) {
+        // Some browsers throw if recognition already ended.
+    }
+}
+
+function startTeacherTimer() {
+    if (teacherTimerId) return;
+    teacherTimerId = window.setInterval(tickTeacherUsage, 1000);
+}
+
+function stopTeacherTimer(saveNow) {
+    if (teacherTimerId) {
+        window.clearInterval(teacherTimerId);
+        teacherTimerId = null;
+    }
+    if (saveNow) saveAppState();
+}
+
+function isTeacherUsageActive() {
+    return teacherListening || isAndroidGeminiActive();
+}
+
+function tickTeacherUsage() {
+    if (!isTeacherUsageActive()) {
+        stopTeacherTimer(true);
+        renderTeacherDemo();
+        return;
+    }
+    const usage = getTeacherDailyUsage();
+    usage.usedSeconds = Math.min(TEACHER_DAILY_LIMIT_SECONDS, (usage.usedSeconds || 0) + 1);
+    teacherWordSeconds = Math.min(TEACHER_WORD_LIMIT_SECONDS, teacherWordSeconds + 1);
+    teacherTickSaveCounter += 1;
+    if (teacherTickSaveCounter >= 5) {
+        teacherTickSaveCounter = 0;
+        saveAppState();
+    }
+    enforceTeacherUsageLimits();
+    renderTeacherDemo();
+}
+
+function enforceTeacherUsageLimits() {
+    const dailyLimitReached = getTeacherDailyRemainingSeconds() <= 0;
+    const wordLimitReached = teacherWordSeconds >= TEACHER_WORD_LIMIT_SECONDS;
+    if (!dailyLimitReached && !wordLimitReached) return;
+    const status = document.getElementById("teacher-status");
+    if (status) {
+        status.innerText = dailyLimitReached
+            ? "今日の先生時間を使い切りました。また明日使おう！"
+            : "この単語の先生時間は終わりです。次のカードへ進もう！";
+    }
+    stopTeacherConversation();
 }
 
 function isAndroidGeminiActive() {
@@ -925,7 +1129,7 @@ function getTeacherContext() {
         enSent: w.enSent,
         jpSent: w.jpSent,
         turns: teacherTurns,
-        maxTurns: TEACHER_DEMO_MAX_TURNS
+        maxTurns: TEACHER_MAX_QUESTIONS
     };
 }
 
@@ -933,23 +1137,28 @@ function onGeminiTeacherStatus(status, message, turns) {
     const statusBox = document.getElementById("teacher-status");
     if (statusBox && message) statusBox.innerText = message;
     if (Number.isInteger(turns) && turns >= 0) {
-        teacherTurns = Math.min(TEACHER_DEMO_MAX_TURNS, turns);
+        teacherTurns = Math.min(TEACHER_MAX_QUESTIONS, turns);
     }
     if (status === "connecting" || status === "permission_required" || status === "active") {
         teacherListening = true;
+        startTeacherTimer();
     }
     if (status === "started") {
         teacherListening = true;
+        startTeacherTimer();
     }
     if (status === "turn_completed") {
         teacherListening = true;
+        startTeacherTimer();
     }
     if (status === "limit_reached") {
         teacherListening = false;
-        teacherTurns = TEACHER_DEMO_MAX_TURNS;
+        teacherTurns = TEACHER_MAX_QUESTIONS;
+        stopTeacherTimer(true);
     }
     if (status === "stopped" || status === "error" || status === "permission_denied") {
         teacherListening = false;
+        stopTeacherTimer(true);
     }
     renderTeacherDemo();
 }

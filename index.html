@@ -107,6 +107,7 @@
         .btn-star { background-color: #fff59d; color: #f57f17; box-shadow: 0 5px 0 #fbc02d; margin-top: 10px; font-size: 14px; }
         .btn-starred { background-color: #ffcc80; color: #e65100; box-shadow: 0 5px 0 #ef6c00; }
         .btn-teacher-toggle { background-color: #d7ecff; color: #1565c0; box-shadow: 0 4px 0 #90caf9; min-height: 36px; padding: 8px 12px; border-radius: 18px; font-size: 12px; margin-top: 10px; }
+        .btn-teacher-toggle:disabled { background-color: #eeeeee; color: #888888; box-shadow: 0 4px 0 #cfcfcf; }
         .btn-teacher-toggle:active { box-shadow: 0 0 0 #90caf9; }
         .teacher-panel { background: #fff; border: 2px dashed var(--dash-color); border-radius: 18px; margin: -2px 0 18px; padding: 14px; text-align: left; box-shadow: 0 5px 12px var(--container-shadow); }
         .teacher-panel-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
@@ -285,7 +286,7 @@
             <button class="jelly-btn btn-speak" onclick="speakWord()">発音を聞く</button>
             <button id="btn-star" class="jelly-btn btn-star" onclick="toggleReview()">復習に追加</button>
             <span class="teacher-action-spacer" aria-hidden="true"></span>
-            <button id="btn-teacher-toggle" class="jelly-btn btn-teacher-toggle" onclick="toggleTeacherPanel(event)">先生に聞く</button>
+            <button id="btn-teacher-toggle" class="jelly-btn btn-teacher-toggle" disabled aria-disabled="true" title="先生機能は準備中です">先生に聞く</button>
         </div>
         <div class="card" onclick="toggleCard()">
             <span id="study-word">Loading...</span>
@@ -405,7 +406,7 @@
     </div>
 </div>
 
-<div class="version-badge">v1.1.28</div>
+<div class="version-badge">v1.1.29</div>
 
 <script src="backend-config.js"></script>
 <script>

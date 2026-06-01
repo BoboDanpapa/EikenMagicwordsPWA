@@ -405,7 +405,7 @@
     </div>
 </div>
 
-<div class="version-badge">v1.1.25</div>
+<div class="version-badge">v1.1.27</div>
 
 <script src="backend-config.js"></script>
 <script>
@@ -468,7 +468,6 @@ let teacherShouldKeepListening = false;
 let teacherRecognitionRestartId = null;
 let teacherSpeaking = false;
 let teacherAnswerInFlight = false;
-let teacherGeminiBackendUnavailable = false;
 let teacherRecognitionLanguageIndex = 0;
 let teacherRecognitionHeardText = "";
 let teacherRecognitionHeardConfidence = 0;
@@ -1238,21 +1237,30 @@ async function answerBrowserTeacherQuestion(questionText) {
     if (!cleanedQuestion || cleanedQuestion === teacherLastAnsweredText || teacherAnswerInFlight) return;
     teacherAnswerInFlight = true;
     teacherLastAnsweredText = cleanedQuestion;
-    countTeacherQuestionOnce(cleanedQuestion);
-    teacherSpeaking = true;
     pauseTeacherRecognitionForAnswer();
     const status = document.getElementById("teacher-status");
     if (status) status.innerText = `聞こえました: ${cleanedQuestion}\n先生が考えています...`;
-    const answer = await buildBrowserTeacherAnswer(cleanedQuestion);
-    if (status) {
-        status.innerText = `聞こえました: ${cleanedQuestion}\n先生: ${answer}`;
+    try {
+        const result = await buildBrowserTeacherAnswer(cleanedQuestion);
+        if (!result.answer) {
+            if (status) status.innerText = `聞こえました: ${cleanedQuestion}\n${formatTeacherBackendError(result)}`;
+            return;
+        }
+        const answer = result.answer;
+        countTeacherQuestionOnce(cleanedQuestion);
+        if (status) {
+            status.innerText = `聞こえました: ${cleanedQuestion}\n先生: ${answer}`;
+        }
+        addTeacherConversationTurn(cleanedQuestion, answer);
+        teacherSpeaking = true;
+        await speakTeacherAnswer(answer);
+    } finally {
+        teacherSpeaking = false;
+        teacherListening = false;
+        stopTeacherTimer(true);
+        teacherAnswerInFlight = false;
+        renderTeacherDemo();
     }
-    addTeacherConversationTurn(cleanedQuestion, answer);
-    await speakTeacherAnswer(answer);
-    teacherListening = false;
-    stopTeacherTimer(true);
-    teacherAnswerInFlight = false;
-    renderTeacherDemo();
 }
 
 function addTeacherConversationTurn(questionText, answerText) {
@@ -1286,9 +1294,16 @@ function normalizeTeacherQuestion(value) {
 }
 
 async function buildBrowserTeacherAnswer(questionText) {
-    const geminiAnswer = await fetchGeminiTeacherAnswer(questionText);
-    if (geminiAnswer && isCompleteTeacherAnswer(geminiAnswer) && !shouldRejectTeacherAnswer(questionText, geminiAnswer)) return geminiAnswer;
-    return buildFallbackTeacherAnswer(questionText);
+    const result = await fetchGeminiTeacherAnswer(questionText);
+    if (result.error) return result;
+    const answer = String(result.answer || "").trim();
+    if (!isCompleteTeacherAnswer(answer)) {
+        return { error: "Gemini answer was incomplete. Please try again." };
+    }
+    if (shouldRejectTeacherAnswer(questionText, answer)) {
+        return { error: "Gemini repeated an old example. Please try again." };
+    }
+    return { answer };
 }
 
 function normalizeTeacherText(value) {
@@ -1297,7 +1312,7 @@ function normalizeTeacherText(value) {
 
 function isNewExampleRequest(questionText) {
     const q = String(questionText || "").toLowerCase();
-    return /(他|別|違う|新しい|もう一つ|もうひとつ|別の|他の|another|other|different|new).*(例文|例|sentence|example)|(例文|例|sentence|example).*(他|別|違う|新しい|もう一つ|もうひとつ|別の|他の|another|other|different|new)/.test(q);
+    return /(他|別|違う|新しい|もう一つ|もうひとつ|別の|他の|another|other|different|new).*(例文|例|文|sentence|example|sample)|(例文|例|文|sentence|example|sample).*(他|別|違う|新しい|もう一つ|もうひとつ|別の|他の|another|other|different|new)|give me.*(example|sample)|make.*(sentence|example|sample)/.test(q);
 }
 
 function shouldRejectTeacherAnswer(questionText, answerText) {
@@ -1329,7 +1344,7 @@ function getGeminiBackendUrl() {
 
 async function fetchGeminiTeacherAnswer(questionText) {
     const baseUrl = getGeminiBackendUrl();
-    if (!baseUrl || teacherGeminiBackendUnavailable) return "";
+    if (!baseUrl) return { error: "Gemini backend is not configured." };
     try {
         const response = await fetch(`${baseUrl}/api/teacher/ask`, {
             method: "POST",
@@ -1339,30 +1354,49 @@ async function fetchGeminiTeacherAnswer(questionText) {
                 context: getTeacherContext()
             })
         });
-        if (!response.ok) throw new Error(`backend ${response.status}`);
-        const data = await response.json();
-        return String(data.answer || "").trim();
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            return {
+                error: data.error || `Gemini backend error ${response.status}`,
+                status: response.status
+            };
+        }
+        const answer = String(data.answer || "").trim();
+        if (!answer) return { error: "Gemini returned an empty answer." };
+        return { answer };
     } catch (error) {
-        teacherGeminiBackendUnavailable = true;
-        const status = document.getElementById("teacher-status");
-        if (status) status.innerText = "Gemini先生につながりません。今はオフライン先生で答えます。";
-        return "";
+        return {
+            error: error.message || "Gemini backend could not be reached.",
+            status: 0
+        };
     }
+}
+
+function formatTeacherBackendError(result) {
+    const raw = String(result && result.error ? result.error : "Gemini is not available right now.");
+    if (result && result.status === 429) {
+        return "Gemini先生の利用回数制限に当たっています。少し待ってからもう一度試してください。";
+    }
+    if (/quota|rate.?limit|exceeded/i.test(raw)) {
+        return "Gemini先生の利用回数制限に当たっています。少し待ってからもう一度試してください。";
+    }
+    const short = raw.length > 160 ? `${raw.slice(0, 157)}...` : raw;
+    return `Gemini先生で問題が起きました: ${short}`;
 }
 
 function buildFallbackTeacherAnswer(questionText) {
     const context = getTeacherContext();
     const q = String(questionText || "").toLowerCase();
-    const offTopic = /天気|ゲーム|冗談|歌|ニュース|政治|weather|game|joke|song|news|politics|chat/.test(q);
+    const offTopic = /雑談|おしゃべり|関係ない|関係ない話|天気|ゲーム|冗談|歌|ニュース|政治|free talk|small talk|chat|weather|game|joke|song|news|politics/.test(q);
     const wantsMeaning = /意味|いみ|どういう|何|what|mean|meaning|日本語/.test(q);
-    const wantsExample = /例文|例|sentence|example|使い方|use|使う/.test(q);
+    const wantsExample = /例文|例|文|sentence|example|sample|使い方|use|使う/.test(q);
     const wantsPronunciation = /発音|読み|よみ|pronounce|pronunciation|read|say/.test(q);
     const wantsDifference = /違い|ちがい|similar|difference|different|同じ|似/.test(q);
     const wantsOpposite = /反対|反対語|反対言葉|逆|opposite|antonym/.test(q);
     const wantsJapanese = /日本語|和訳|訳|translate|翻訳/.test(q);
 
     if (offTopic) {
-        return `Let's stay with this word: ${context.word}. I can help with its meaning, pronunciation, examples, or similar words.`;
+        return `I am your English teacher. Let's talk about this word: ${context.word}.`;
     }
     if (wantsPronunciation) {
         return `Let's say it slowly: ${context.word}. ${context.word}. Now try it with me.`;
@@ -1382,7 +1416,7 @@ function buildFallbackTeacherAnswer(questionText) {
     if (wantsMeaning || wantsJapanese) {
         return `${context.word} means "${context.jp}" in Japanese. You can remember it with this sentence: ${context.enSent}`;
     }
-    return `I heard your question about ${context.word}. For this word, a useful point is: ${context.enSent}`;
+    return `I heard your question about ${context.word}. Please ask me about its meaning, an example sentence, pronunciation, or a similar word.`;
 }
 
 function buildNewExampleFallback(context) {
@@ -1400,6 +1434,18 @@ function buildNewExampleFallback(context) {
             "The picnic will depend on the weather.",
             "Children depend on adults for help.",
             "Your score can depend on careful reading."
+        ],
+        "preserve": [
+            "We should preserve old photos carefully.",
+            "The museum preserves important paintings.",
+            "Please preserve this memory in your diary.",
+            "Many people work to preserve clean rivers."
+        ],
+        "encourage": [
+            "My coach encourages me before a game.",
+            "Kind words can encourage your friends.",
+            "Teachers encourage students to try again.",
+            "This song encourages me when I feel nervous."
         ]
     };
     const examples = examplesByWord[lower] || [

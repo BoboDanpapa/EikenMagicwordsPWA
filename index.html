@@ -122,7 +122,7 @@
         .btn-speak { background-color: var(--speak-main); color: var(--speak-text); box-shadow: 0 5px 0 var(--speak-shadow); }
         .btn-star { background-color: #fff59d; color: #f57f17; box-shadow: 0 5px 0 #fbc02d; margin-top: 0; font-size: 14px; }
         .btn-starred { background-color: #ffcc80; color: #e65100; box-shadow: 0 5px 0 #ef6c00; }
-        .btn-teacher-toggle { background-color: #e6e6e6; color: #777; box-shadow: 0 5px 0 #c7c7c7; min-height: 46px; padding: 8px 12px; border-radius: 18px; font-size: 12px; margin-top: 0; }
+        .btn-teacher-toggle { background-color: #d7ecff; color: #1565c0; box-shadow: 0 5px 0 #90caf9; min-height: 46px; padding: 8px 12px; border-radius: 18px; font-size: 12px; margin-top: 0; }
         .btn-teacher-toggle:active { box-shadow: 0 0 0 #90caf9; }
         .teacher-panel { background: #fff; border: 2px dashed var(--dash-color); border-radius: 18px; margin: -2px 0 18px; padding: 14px; text-align: left; box-shadow: 0 5px 12px var(--container-shadow); }
         .teacher-panel-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
@@ -307,7 +307,7 @@
             <button class="jelly-btn btn-speak" onclick="speakWord()">発音を聞く</button>
             <button id="btn-star" class="jelly-btn btn-star" onclick="toggleReview()">復習に追加</button>
             <span class="teacher-action-spacer" aria-hidden="true"></span>
-            <button id="btn-teacher-toggle" class="jelly-btn btn-teacher-toggle" disabled aria-disabled="true" title="先生機能は準備中です">先生に聞く（準備中）</button>
+            <button id="btn-teacher-toggle" class="jelly-btn btn-teacher-toggle" onclick="toggleTeacherPanel(event)">先生に聞く</button>
         </div>
         <div class="card" onclick="toggleCard()">
             <div class="pos-corner" onclick="event.stopPropagation()">
@@ -348,6 +348,10 @@
                     <option value="en-US">English</option>
                 </select>
                 <button id="btn-teacher-mic" class="jelly-btn btn-teacher-mic" onclick="askTeacherDemo(event)">マイク</button>
+                <div class="teacher-text-row">
+                    <input id="teacher-text-question" type="text" maxlength="120" placeholder="文字で質問">
+                    <button class="jelly-btn btn-teacher-mic" onclick="askTeacherByText(event)">質問</button>
+                </div>
             </div>
         </div>
         <div class="pager">
@@ -435,7 +439,7 @@
     </div>
 </div>
 
-<div class="version-badge">v1.1.38</div>
+<div class="version-badge">v1.1.39</div>
 
 <script src="backend-config.js"></script>
 <script>
@@ -1177,7 +1181,7 @@ function shouldRetryTeacherRecognition(finalText, confidence, lang) {
 function startBrowserTeacherSpeech(status) {
     if (!window.isSecureContext) {
         if (status) {
-            status.innerText = "マイクはHTTPSのページで使えます。GitHub Pages版、またはHTTPSのページで試してください。";
+            status.innerText = "マイクはHTTPSのページで使えます。下の文字入力でも先生に質問できます。";
         }
         renderTeacherDemo();
         return;
@@ -1185,7 +1189,7 @@ function startBrowserTeacherSpeech(status) {
     const Recognition = getSpeechRecognitionConstructor();
     if (!Recognition) {
         if (status) {
-            status.innerText = "このPWAでは、このブラウザのマイク聞き取りに対応していません。Android版の先生会話、またはChromeなど対応ブラウザで試してください。";
+            status.innerText = "このPWAでは、このブラウザのマイク聞き取りに対応していません。下の文字入力でも先生に質問できます。";
         }
         renderTeacherDemo();
         return;
@@ -1305,8 +1309,8 @@ function startTeacherRecognitionCycle(status) {
         stopTeacherTimer(true);
         if (status) {
             status.innerText = event.error === "not-allowed" || event.error === "service-not-allowed"
-                ? "マイクの許可がありません。ブラウザのマイク許可を確認してください。"
-                : "聞こえませんでした。もう一度マイクを押して、質問を話してください。";
+                ? "マイクの許可がありません。ブラウザのマイク許可を確認してください。下の文字入力でも質問できます。"
+                : "聞こえませんでした。もう一度マイクを押すか、下の文字入力で質問してください。";
         }
         renderTeacherDemo();
     };
@@ -1340,7 +1344,7 @@ function startTeacherRecognitionCycle(status) {
         teacherShouldKeepListening = false;
         teacherListening = false;
         stopTeacherTimer(true);
-        if (status) status.innerText = "質問が聞こえませんでした。もう一度マイクを押して話してください。";
+        if (status) status.innerText = "質問が聞こえませんでした。もう一度マイクを押すか、下の文字入力で質問してください。";
         renderTeacherDemo();
     };
 
